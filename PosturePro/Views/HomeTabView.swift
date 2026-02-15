@@ -43,7 +43,7 @@ struct HomeTabView: View {
             .navigationTitle("SpineSprout")
             .navigationBarTitleDisplayMode(.inline)
         }
-        .onChange(of: postureManager.isPostureGood) { _, newValue in
+        .onChange(of: postureManager.isPostureGood) { newValue in
             handlePostureChange(newValue)
         }
     }
@@ -185,8 +185,7 @@ private extension HomeTabView {
     
     func handlePostureChange(_ isGood: Bool) {
         if !isGood {
-            let generator = UINotificationFeedbackGenerator()
-            generator.notificationOccurred(.warning)
+            HapticsManager.shared.playPostureWarning()
         }
         audioManager.adjustEffect(isGoodPosture: isGood)
         (plantSceneInstance ?? plantScene).updatePostureState(isGood: isGood)

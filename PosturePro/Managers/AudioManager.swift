@@ -2,77 +2,111 @@
 //  AudioManager.swift
 //  PosturePro
 //
-//  Gestisce l'audio Lo-Fi e l'effetto filtrato in base alla postura.
+//  AVAudioEngine per riproduzione Lo-Fi con Low Pass EQ in tempo reale.
+//  Postura cattiva → filtro a 500Hz = suono ovattato.
 //
 
 import AVFoundation
 
-@MainActor
 final class AudioManager: ObservableObject {
     
-    // MARK: - Published State
     @Published private(set) var isPlaying: Bool = false
     
-    // MARK: - Private
-    private var engine = AVAudioEngine()
-    private var player = AVAudioPlayerNode()
-    private var eqNode = AVAudioUnitEQ(numberOfBands: 1)
-    private var displayLink: CADisplayLink?
+    private var engine: AVAudioEngine?
+    private var playerNode: AVAudioPlayerNode?
+    private var eqNode: AVAudioUnitEQ?
+    private var format: AVAudioFormat?
     
-    private let goodPostureFrequency: Float = 20000.0
-    private let badPostureFrequency: Float = 600.0
-    private let transitionDuration: TimeInterval = 0.8
-    
-    // MARK: - Public API
+    private let goodPostureHz: Float = 20000
+    private let badPostureHz: Float = 500
     
     func setupAudio() {
-        let filterParams = eqNode.bands[0]
-        filterParams.filterType = .lowPass
-        filterParams.frequency = goodPostureFrequency
-        filterParams.bypass = false
-        filterParams.gain = 0
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setCategory(.playback, mode: .default, options: [.allowBluetooth, .defaultToSpeaker])
+            try session.setActive(true)
+        } catch {
+            print("AVAudioSession error: \(error)")
+            return
+        }
+        
+        guard let url = Bundle.main.url(forResource: "lofi", withExtension: "mp3") else {
+            print("⚠️ lofi.mp3 non trovato nel bundle")
+            return
+        }
+        
+        let engine = AVAudioEngine()
+        let player = AVAudioPlayerNode()
+        let eq = AVAudioUnitEQ(numberOfBands: 1)
+        
+        let band = eq.bands[0]
+        band.filterType = .lowPass
+        band.frequency = goodPostureHz
+        band.bandwidth = 1
+        band.gain = 0
+        band.bypass = false
         
         engine.attach(player)
-        engine.attach(eqNode)
-        engine.connect(player, to: eqNode, format: nil)
-        engine.connect(eqNode, to: engine.mainMixerNode, format: nil)
+        engine.attach(eq)
+        
+        let file: AVAudioFile
+        do {
+            file = try AVAudioFile(forReading: url)
+        } catch {
+            print("AVAudioFile error: \(error)")
+            return
+        }
+        
+        format = file.processingFormat
+        guard let format = format else { return }
+        
+        engine.connect(player, to: eq, format: format)
+        engine.connect(eq, to: engine.mainMixerNode, format: format)
         
         do {
             try engine.start()
         } catch {
-            print("Audio Engine error: \(error)")
+            print("AVAudioEngine start error: \(error)")
+            return
         }
+        
+        self.engine = engine
+        self.playerNode = player
+        self.eqNode = eq
     }
     
     func playLoFiTrack() {
-        guard let url = Bundle.main.url(forResource: "lofi", withExtension: "mp3") else {
-            print("⚠️ File 'lofi.mp3' non trovato. Aggiungilo al bundle.")
-            return
+        if playerNode == nil {
+            setupAudio()
         }
+        guard let player = playerNode else { return }
+        
+        guard let url = Bundle.main.url(forResource: "lofi", withExtension: "mp3") else { return }
         
         do {
             let file = try AVAudioFile(forReading: url)
             player.scheduleFile(file, at: nil) { [weak self] in
-                Task { @MainActor in
+                DispatchQueue.main.async {
                     if self?.isPlaying == true {
                         self?.playLoFiTrack()
                     }
                 }
             }
             player.play()
-            isPlaying = true
+            DispatchQueue.main.async { self.isPlaying = true }
         } catch {
-            print("Errore caricamento audio: \(error)")
+            print("scheduleFile error: \(error)")
         }
     }
     
     func stopPlayback() {
-        player.stop()
-        isPlaying = false
+        playerNode?.stop()
+        engine?.stop()
+        DispatchQueue.main.async { self.isPlaying = false }
     }
     
     func adjustEffect(isGoodPosture: Bool) {
-        let targetFreq = isGoodPosture ? goodPostureFrequency : badPostureFrequency
-        eqNode.bands[0].frequency = targetFreq
+        let targetHz = isGoodPosture ? goodPostureHz : badPostureHz
+        eqNode?.bands[0].frequency = targetHz
     }
 }
