@@ -1,12 +1,12 @@
 //
-//  ContentView.swift
+//  HomeTabView.swift
 //  PosturePro
 //
 
 import SwiftUI
 import SpriteKit
 
-struct ContentView: View {
+struct HomeTabView: View {
     @StateObject private var postureManager = PostureManager()
     @StateObject private var audioManager = AudioManager()
     @State private var plantSceneInstance: PlantScene?
@@ -23,20 +23,25 @@ struct ContentView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: AppTheme.Spacing.md) {
-                    plantSection
-                    statusCard
-                    actionSection
-                    #if DEBUG
-                    debugSection
-                    #endif
+            VStack(spacing: 0) {
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: AppTheme.Spacing.md) {
+                        plantSection
+                        statusCard
+                        #if DEBUG
+                        debugSection
+                        #endif
+                        Spacer(minLength: AppTheme.Spacing.lg)
+                    }
+                    .padding(.horizontal, AppTheme.Spacing.sm)
+                    .padding(.top, AppTheme.Spacing.xxs)
                 }
-                .padding(AppTheme.Spacing.sm)
+                
+                actionBar
             }
             .background(AppTheme.Colors.background)
             .navigationTitle("SpineSprout")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
         }
         .onChange(of: postureManager.isPostureGood) { _, newValue in
             handlePostureChange(newValue)
@@ -46,84 +51,97 @@ struct ContentView: View {
 
 // MARK: - Sections
 
-private extension ContentView {
+private extension HomeTabView {
     
     var plantSection: some View {
         ZStack {
             RoundedRectangle(cornerRadius: AppTheme.Radius.plantCard)
                 .fill(.ultraThinMaterial)
-                .frame(height: AppTheme.Layout.plantSceneHeight + AppTheme.Spacing.xs)
+                .frame(minHeight: AppTheme.Layout.plantSceneHeight + AppTheme.Spacing.sm)
             
             SpriteView(scene: plantScene, options: [.allowsTransparency])
                 .frame(width: AppTheme.Layout.plantSceneWidth, height: AppTheme.Layout.plantSceneHeight)
                 .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.card))
+                .allowsHitTesting(false)
         }
         .padding(.vertical, AppTheme.Spacing.xxs)
     }
     
     var statusCard: some View {
         HStack(spacing: AppTheme.Spacing.sm) {
-            statusIcon
-            statusText
+            Image(systemName: postureManager.isPostureGood ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(postureManager.isPostureGood ? AppTheme.Colors.success : AppTheme.Colors.warning)
+            
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.xxxs) {
+                Text(postureManager.isPostureGood ? "Postura ottima" : "Raddrizza la schiena")
+                    .font(AppTheme.Typography.headline)
+                    .foregroundStyle(.primary)
+                Text(postureManager.isPostureGood ? "Continua così!" : "Tieni la schiena dritta")
+                    .font(AppTheme.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
             Spacer(minLength: 0)
         }
         .padding(AppTheme.Spacing.sm)
-        .frame(minHeight: AppTheme.Layout.minTouchTarget + AppTheme.Spacing.xxs)
         .background(AppTheme.Colors.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.card))
         .animation(.easeInOut(duration: 0.3), value: postureManager.isPostureGood)
     }
     
-    @ViewBuilder
-    private var statusIcon: some View {
-        Image(systemName: postureManager.isPostureGood ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-            .font(.system(size: 44))
-            .foregroundStyle(postureManager.isPostureGood ? AppTheme.Colors.success : AppTheme.Colors.warning)
-    }
-    
-    @ViewBuilder
-    private var statusText: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.xxxs) {
-            Text(postureManager.isPostureGood ? "Postura ottima" : "Raddrizza la schiena")
-                .font(AppTheme.Typography.headline)
-                .foregroundStyle(.primary)
-            Text(postureManager.isPostureGood ? "Continua così!" : "La pianta ha bisogno di te")
-                .font(AppTheme.Typography.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
-    
-    var actionSection: some View {
-        VStack(spacing: AppTheme.Spacing.xs) {
-            if !postureManager.isMonitoring {
-                primaryButton
-            } else {
-                secondaryButton
+    var actionBar: some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack {
+                if !postureManager.isMonitoring {
+                    startButton
+                } else {
+                    stopButton
+                }
             }
+            .padding(.horizontal, AppTheme.Spacing.sm)
+            .padding(.vertical, AppTheme.Spacing.sm)
+            .background(AppTheme.Colors.cardBackground)
         }
+        .background(AppTheme.Colors.cardBackground)
     }
     
-    private var primaryButton: some View {
-        Button { startSession() } label: {
-            Label("Calibra e inizia", systemImage: "play.circle.fill")
-                .font(AppTheme.Typography.headline)
-                .frame(maxWidth: .infinity)
-                .frame(minHeight: AppTheme.Layout.minTouchTarget)
-                .padding(.horizontal, AppTheme.Spacing.sm)
+    private var startButton: some View {
+        Button {
+            startSession()
+        } label: {
+            HStack(spacing: AppTheme.Spacing.xxs) {
+                Image(systemName: "play.circle.fill")
+                Text("Calibra e inizia")
+                    .fontWeight(.semibold)
+            }
+            .font(.body)
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: AppTheme.Layout.minTouchTarget)
+            .background(AppTheme.Colors.success)
+            .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.button))
         }
-        .buttonStyle(.borderedProminent)
-        .tint(AppTheme.Colors.success)
+        .buttonStyle(.plain)
     }
     
-    private var secondaryButton: some View {
-        Button(role: .destructive) { endSession() } label: {
-            Label("Ferma sessione", systemImage: "stop.circle.fill")
-                .font(AppTheme.Typography.headline)
-                .frame(maxWidth: .infinity)
-                .frame(minHeight: AppTheme.Layout.minTouchTarget)
-                .padding(.horizontal, AppTheme.Spacing.sm)
+    private var stopButton: some View {
+        Button {
+            endSession()
+        } label: {
+            HStack(spacing: AppTheme.Spacing.xxs) {
+                Image(systemName: "stop.circle.fill")
+                Text("Ferma sessione")
+                    .fontWeight(.semibold)
+            }
+            .font(.body)
+            .foregroundColor(.red)
+            .frame(maxWidth: .infinity)
+            .frame(height: AppTheme.Layout.minTouchTarget)
+            .background(Color.red.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.button))
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.plain)
     }
     
     #if DEBUG
@@ -152,7 +170,7 @@ private extension ContentView {
 
 // MARK: - Actions
 
-private extension ContentView {
+private extension HomeTabView {
     
     func startSession() {
         postureManager.calibrateAndStart()
@@ -176,5 +194,5 @@ private extension ContentView {
 }
 
 #Preview {
-    ContentView()
+    HomeTabView()
 }

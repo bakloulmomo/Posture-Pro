@@ -2,14 +2,11 @@
 //  AppTheme.swift
 //  PosturePro
 //
-//  Design system centralizzato. Modifica qui per cambiare l'aspetto dell'intera app.
-//
 
 import SwiftUI
 
 enum AppTheme {
     
-    // MARK: - Spacing (8pt grid)
     enum Spacing {
         static let xxxs: CGFloat = 4
         static let xxs: CGFloat = 8
@@ -20,22 +17,19 @@ enum AppTheme {
         static let xl: CGFloat = 40
     }
     
-    // MARK: - Corner Radius
     enum Radius {
         static let card: CGFloat = 20
         static let button: CGFloat = 14
         static let plantCard: CGFloat = 28
-        static let icon: CGFloat = 12
     }
     
-    // MARK: - Layout
     enum Layout {
-        static let minTouchTarget: CGFloat = 44
-        static let plantSceneWidth: CGFloat = 300
-        static let plantSceneHeight: CGFloat = 420
+        static let minTouchTarget: CGFloat = 48
+        static let plantSceneWidth: CGFloat = 280
+        static let plantSceneHeight: CGFloat = 360
+        static let bottomBarHeight: CGFloat = 88
     }
     
-    // MARK: - Colors (semantic)
     enum Colors {
         static let background = Color(.systemGroupedBackground)
         static let cardBackground = Color(.secondarySystemGroupedBackground)
@@ -43,7 +37,6 @@ enum AppTheme {
         static let warning = Color.orange
     }
     
-    // MARK: - Typography
     enum Typography {
         static let title = Font.title2.weight(.semibold)
         static let headline = Font.headline

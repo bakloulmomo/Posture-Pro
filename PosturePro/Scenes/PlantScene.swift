@@ -2,26 +2,24 @@
 //  PlantScene.swift
 //  PosturePro
 //
-//  Pianta amichevole che reagisce alla postura.
-//
 
 import SpriteKit
+import UIKit
 
-// MARK: - Design (modifica qui per cambiare la pianta)
+// MARK: - Design (modifica qui)
 
 private enum PlantDesign {
-    static let healthyGreen = SKColor(red: 0.35, green: 0.75, blue: 0.45, alpha: 1)
-    static let sickAmber = SKColor(red: 0.92, green: 0.68, blue: 0.38, alpha: 1)
-    static let potTerracotta = SKColor(red: 0.82, green: 0.58, blue: 0.48, alpha: 1)
-    static let potRim = SKColor(red: 0.75, green: 0.52, blue: 0.42, alpha: 1)
+    static let healthyGreen = SKColor(red: 0.32, green: 0.72, blue: 0.42, alpha: 1)
+    static let healthyHighlight = SKColor(red: 0.45, green: 0.82, blue: 0.52, alpha: 1)
+    static let sickAmber = SKColor(red: 0.94, green: 0.65, blue: 0.32, alpha: 1)
+    static let potTerracotta = SKColor(red: 0.88, green: 0.62, blue: 0.50, alpha: 1)
+    static let potRim = SKColor(red: 0.80, green: 0.54, blue: 0.42, alpha: 1)
 }
 
 final class PlantScene: SKScene {
     
     private var stemNode: SKShapeNode?
     private var leafNodes: [SKShapeNode] = []
-    private var potBody: SKShapeNode?
-    private var potRimNode: SKShapeNode?
     
     override func didMove(to view: SKView) {
         backgroundColor = .clear
@@ -32,56 +30,67 @@ final class PlantScene: SKScene {
         let cx = size.width / 2
         let cy = size.height / 2
         
-        // Vaso: corpo trapezoidale con bordo superiore
         setupPot(centerX: cx)
         
-        // Stelo morbido (rettangolo arrotondato)
-        let stem = SKShapeNode(rectOf: CGSize(width: 14, height: 130), cornerRadius: 8)
+        let stem = SKShapeNode(rectOf: CGSize(width: 12, height: 118), cornerRadius: 7)
         stem.fillColor = PlantDesign.healthyGreen
         stem.strokeColor = .clear
-        stem.position = CGPoint(x: cx, y: cy - 10)
+        stem.position = CGPoint(x: cx, y: cy - 8)
         addChild(stem)
         stemNode = stem
         
-        // Foglie: forme organiche, più carine
-        addLeaf(to: stem, size: CGSize(width: 48, height: 28), position: CGPoint(x: -22, y: 40), rotation: .pi / 6)
-        addLeaf(to: stem, size: CGSize(width: 52, height: 30), position: CGPoint(x: 24, y: 50), rotation: -(.pi / 6))
-        addLeaf(to: stem, size: CGSize(width: 40, height: 24), position: CGPoint(x: -14, y: 5), rotation: .pi / 8)
+        addOrganicLeaf(to: stem, width: 56, height: 32, x: -26, y: 42, rotation: .pi / 7)
+        addOrganicLeaf(to: stem, width: 62, height: 36, x: 28, y: 52, rotation: -(.pi / 6))
+        addOrganicLeaf(to: stem, width: 44, height: 26, x: -18, y: 8, rotation: .pi / 10)
     }
     
     private func setupPot(centerX cx: CGFloat) {
-        // Corpo vaso (trapezio arrotondato)
-        let potTop: CGFloat = 120
-        let potBottom: CGFloat = 45
-        let potW: CGFloat = 90
+        let potTop: CGFloat = 115
+        let potBottom: CGFloat = 42
+        let potW: CGFloat = 88
         
         let path = CGMutablePath()
-        path.move(to: CGPoint(x: cx - potW/2 + 12, y: potTop))
-        path.addLine(to: CGPoint(x: cx - potW/2 - 8, y: potBottom))
-        path.addLine(to: CGPoint(x: cx + potW/2 + 8, y: potBottom))
-        path.addLine(to: CGPoint(x: cx + potW/2 - 12, y: potTop))
+        path.move(to: CGPoint(x: cx - potW/2 + 14, y: potTop))
+        path.addLine(to: CGPoint(x: cx - potW/2 - 10, y: potBottom))
+        path.addLine(to: CGPoint(x: cx + potW/2 + 10, y: potBottom))
+        path.addLine(to: CGPoint(x: cx + potW/2 - 14, y: potTop))
         path.closeSubpath()
         
         let pot = SKShapeNode(path: path)
         pot.fillColor = PlantDesign.potTerracotta
         pot.strokeColor = .clear
         addChild(pot)
-        potBody = pot
         
-        // Bordo superiore (ellisse orizzontale)
-        let rim = SKShapeNode(ellipseOf: CGSize(width: potW + 8, height: 18))
+        let rim = SKShapeNode(ellipseOf: CGSize(width: potW + 12, height: 20))
         rim.fillColor = PlantDesign.potRim
         rim.strokeColor = .clear
-        rim.position = CGPoint(x: cx, y: potTop + 4)
+        rim.position = CGPoint(x: cx, y: potTop + 6)
         addChild(rim)
-        potRimNode = rim
     }
     
-    private func addLeaf(to parent: SKNode, size: CGSize, position: CGPoint, rotation: CGFloat) {
-        let leaf = SKShapeNode(ellipseOf: size)
+    /// Foglia organica a forma di lacrima (base verso stelo, punta verso l'esterno)
+    private func addOrganicLeaf(to parent: SKNode, width: CGFloat, height: CGFloat, x: CGFloat, y: CGFloat, rotation: CGFloat) {
+        let path = UIBezierPath()
+        let w = width / 2
+        let h = height / 2
+        
+        path.move(to: CGPoint(x: 0, y: -h))
+        path.addCurve(
+            to: CGPoint(x: 0, y: h),
+            controlPoint1: CGPoint(x: w, y: -h * 0.3),
+            controlPoint2: CGPoint(x: w, y: h * 0.3)
+        )
+        path.addCurve(
+            to: CGPoint(x: 0, y: -h),
+            controlPoint1: CGPoint(x: -w, y: h * 0.3),
+            controlPoint2: CGPoint(x: -w, y: -h * 0.3)
+        )
+        path.close()
+        
+        let leaf = SKShapeNode(path: path.cgPath)
         leaf.fillColor = PlantDesign.healthyGreen
         leaf.strokeColor = .clear
-        leaf.position = position
+        leaf.position = CGPoint(x: x, y: y)
         leaf.zRotation = rotation
         parent.addChild(leaf)
         leafNodes.append(leaf)
@@ -101,16 +110,16 @@ final class PlantScene: SKScene {
         if isGood {
             stem.removeAction(forKey: "wobble")
             let breathe = SKAction.sequence([
-                SKAction.scaleY(to: 1.06, duration: 2.2),
-                SKAction.scaleY(to: 1.0, duration: 2.2)
+                SKAction.scaleY(to: 1.05, duration: 2.0),
+                SKAction.scaleY(to: 1.0, duration: 2.0)
             ])
             stem.run(SKAction.repeatForever(breathe), withKey: "breathe")
         } else {
             stem.removeAction(forKey: "breathe")
             let wobble = SKAction.sequence([
-                SKAction.rotate(byAngle: 0.06, duration: 0.1),
-                SKAction.rotate(byAngle: -0.12, duration: 0.1),
-                SKAction.rotate(byAngle: 0.06, duration: 0.1)
+                SKAction.rotate(byAngle: 0.05, duration: 0.1),
+                SKAction.rotate(byAngle: -0.1, duration: 0.1),
+                SKAction.rotate(byAngle: 0.05, duration: 0.1)
             ])
             stem.run(SKAction.repeatForever(wobble), withKey: "wobble")
         }
