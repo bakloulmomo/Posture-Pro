@@ -2,23 +2,19 @@
 //  ContentView.swift
 //  PosturePro
 //
-//  Interfaccia principale con design Apple Human Interface Guidelines.
-//
 
 import SwiftUI
 import SpriteKit
-import CoreHaptics
 
 struct ContentView: View {
     @StateObject private var postureManager = PostureManager()
     @StateObject private var audioManager = AudioManager()
-    
     @State private var plantSceneInstance: PlantScene?
     
     private var plantScene: PlantScene {
         if let existing = plantSceneInstance { return existing }
         let scene = PlantScene()
-        scene.size = CGSize(width: 300, height: 400)
+        scene.size = CGSize(width: AppTheme.Layout.plantSceneWidth, height: AppTheme.Layout.plantSceneHeight)
         scene.scaleMode = .aspectFit
         scene.backgroundColor = .clear
         DispatchQueue.main.async { plantSceneInstance = scene }
@@ -28,23 +24,17 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 24) {
-                    // Hero: Pianta SpriteKit
+                VStack(spacing: AppTheme.Spacing.md) {
                     plantSection
-                    
-                    // Stato postura
                     statusCard
-                    
-                    // Azioni
                     actionSection
-                    
                     #if DEBUG
                     debugSection
                     #endif
                 }
-                .padding()
+                .padding(AppTheme.Spacing.sm)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(AppTheme.Colors.background)
             .navigationTitle("SpineSprout")
             .navigationBarTitleDisplayMode(.large)
         }
@@ -52,105 +42,130 @@ struct ContentView: View {
             handlePostureChange(newValue)
         }
     }
+}
+
+// MARK: - Sections
+
+private extension ContentView {
     
-    // MARK: - Subviews
-    
-    private var plantSection: some View {
+    var plantSection: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 24)
+            RoundedRectangle(cornerRadius: AppTheme.Radius.plantCard)
                 .fill(.ultraThinMaterial)
-                .frame(height: 420)
+                .frame(height: AppTheme.Layout.plantSceneHeight + AppTheme.Spacing.xs)
             
             SpriteView(scene: plantScene, options: [.allowsTransparency])
-                .frame(width: 300, height: 400)
-                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .frame(width: AppTheme.Layout.plantSceneWidth, height: AppTheme.Layout.plantSceneHeight)
+                .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.card))
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, AppTheme.Spacing.xxs)
     }
     
-    private var statusCard: some View {
-        HStack(spacing: 16) {
-            Image(systemName: postureManager.isPostureGood ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                .font(.system(size: 44))
-                .foregroundStyle(postureManager.isPostureGood ? Color.green : Color.orange)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(postureManager.isPostureGood ? "Postura ottima" : "Raddrizza la schiena")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                Text(postureManager.isPostureGood ? "Continua così!" : "La pianta ha bisogno di te")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
+    var statusCard: some View {
+        HStack(spacing: AppTheme.Spacing.sm) {
+            statusIcon
+            statusText
+            Spacer(minLength: 0)
         }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(AppTheme.Spacing.sm)
+        .frame(minHeight: AppTheme.Layout.minTouchTarget + AppTheme.Spacing.xxs)
+        .background(AppTheme.Colors.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.card))
         .animation(.easeInOut(duration: 0.3), value: postureManager.isPostureGood)
     }
     
-    private var actionSection: some View {
-        VStack(spacing: 12) {
+    @ViewBuilder
+    private var statusIcon: some View {
+        Image(systemName: postureManager.isPostureGood ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+            .font(.system(size: 44))
+            .foregroundStyle(postureManager.isPostureGood ? AppTheme.Colors.success : AppTheme.Colors.warning)
+    }
+    
+    @ViewBuilder
+    private var statusText: some View {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.xxxs) {
+            Text(postureManager.isPostureGood ? "Postura ottima" : "Raddrizza la schiena")
+                .font(AppTheme.Typography.headline)
+                .foregroundStyle(.primary)
+            Text(postureManager.isPostureGood ? "Continua così!" : "La pianta ha bisogno di te")
+                .font(AppTheme.Typography.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+    
+    var actionSection: some View {
+        VStack(spacing: AppTheme.Spacing.xs) {
             if !postureManager.isMonitoring {
-                Button {
-                    startSession()
-                } label: {
-                    Label("Calibra e inizia", systemImage: "play.circle.fill")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.green)
+                primaryButton
             } else {
-                Button(role: .destructive) {
-                    endSession()
-                } label: {
-                    Label("Ferma sessione", systemImage: "stop.circle.fill")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                }
-                .buttonStyle(.bordered)
+                secondaryButton
             }
         }
+    }
+    
+    private var primaryButton: some View {
+        Button { startSession() } label: {
+            Label("Calibra e inizia", systemImage: "play.circle.fill")
+                .font(AppTheme.Typography.headline)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: AppTheme.Layout.minTouchTarget)
+                .padding(.horizontal, AppTheme.Spacing.sm)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(AppTheme.Colors.success)
+    }
+    
+    private var secondaryButton: some View {
+        Button(role: .destructive) { endSession() } label: {
+            Label("Ferma sessione", systemImage: "stop.circle.fill")
+                .font(AppTheme.Typography.headline)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: AppTheme.Layout.minTouchTarget)
+                .padding(.horizontal, AppTheme.Spacing.sm)
+        }
+        .buttonStyle(.bordered)
     }
     
     #if DEBUG
-    private var debugSection: some View {
+    var debugSection: some View {
         DisclosureGroup("Simulatore (no AirPods)") {
-            VStack(alignment: .leading, spacing: 8) {
-                Slider(value: Binding(
-                    get: { postureManager.currentPitch },
-                    set: { postureManager.simulatePitch($0) }
-                ), in: -40...40)
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.xxs) {
+                Slider(
+                    value: Binding(
+                        get: { postureManager.currentPitch },
+                        set: { postureManager.simulatePitch($0) }
+                    ),
+                    in: -40...40
+                )
                 Text("Angolo: \(Int(postureManager.currentPitch))°")
-                    .font(.caption)
+                    .font(AppTheme.Typography.captionMuted)
                     .foregroundStyle(.secondary)
             }
-            .padding(.top, 8)
+            .padding(.top, AppTheme.Spacing.xxs)
         }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(AppTheme.Spacing.sm)
+        .background(AppTheme.Colors.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.card))
     }
     #endif
+}
+
+// MARK: - Actions
+
+private extension ContentView {
     
-    // MARK: - Actions
-    
-    private func startSession() {
+    func startSession() {
         postureManager.calibrateAndStart()
         audioManager.setupAudio()
         audioManager.playLoFiTrack()
     }
     
-    private func endSession() {
+    func endSession() {
         postureManager.stopMonitoring()
         audioManager.stopPlayback()
     }
     
-    private func handlePostureChange(_ isGood: Bool) {
+    func handlePostureChange(_ isGood: Bool) {
         if !isGood {
             let generator = UINotificationFeedbackGenerator()
             generator.notificationOccurred(.warning)
