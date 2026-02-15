@@ -253,6 +253,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHeadphoneMotionUsageDescription = "SpineSprout usa i sensori degli AirPods per monitorare la postura del collo e avvisarti quando ti incurvi.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Utilizziamo il sensore di movimento per monitorare la postura del collo.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -280,6 +282,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHeadphoneMotionUsageDescription = "SpineSprout usa i sensori degli AirPods per monitorare la postura del collo e avvisarti quando ti incurvi.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Utilizziamo il sensore di movimento per monitorare la postura del collo.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
